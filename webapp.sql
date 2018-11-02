@@ -193,15 +193,15 @@ CREATE PROCEDURE ProductLineSale()
         SET SalePrice = (P.p_standard_price - P.p_standard_price * 0.1)
             WHERE P.p_standard_price >= 400;
     END$$
-DELIMITER; -- Change delimiter back to ;
+DELIMITER ; -- Change delimiter back to ;
 
 DELIMITER $$
-CREATE OR REPLACE TRIGGER StandardPriceUpdate
-	AFTER UPDATE ON Product
-    FOR EACH ROW
-        BEGIN
-            INSERT INTO PriceUpdate
-                (pu_date,pu_old_price,pu_new_price) VALUES
-                    (NOW(), OLD.p_standard_price, NEW.p_standard_price)
-        END$$
-DELIMITER;
+CREATE TRIGGER StandardPriceUpdate
+    BEFORE UPDATE ON Product
+        FOR EACH ROW
+            IF(NEW.p_standard_price != OLD.p_standard_price) THEN
+                INSERT INTO PriceUpdate ( pu_date, pu_old_price, pu_new_price )
+                    VALUES ( NOW(), OLD.p_standard_price, NEW.p_standard_price );
+                    CALL ProductLineSale();
+            END IF;$$
+DELIMITER ;
