@@ -195,6 +195,7 @@ CREATE PROCEDURE ProductLineSale()
     END$$
 DELIMITER ; -- Change delimiter back to ;
 
+-- TODO: Procedures cannot be called inside a trigger. Find a way?
 DELIMITER $$
 CREATE TRIGGER StandardPriceUpdate
     BEFORE UPDATE ON Product
@@ -202,6 +203,22 @@ CREATE TRIGGER StandardPriceUpdate
             IF(NEW.p_standard_price != OLD.p_standard_price) THEN
                 INSERT INTO PriceUpdate ( pu_date, pu_old_price, pu_new_price )
                     VALUES ( NOW(), OLD.p_standard_price, NEW.p_standard_price );
-                    CALL ProductLineSale();
-            END IF;$$
+                    /*CALL ProductLineSale();*/ -- Procedures cannot be called inside a trigger 
+            END IF;
+        $$
 DELIMITER ;
+
+-- This should not add a new row to PriceUpdate table since the p_standard_price is already 175 originally
+UPDATE Product P
+	SET P.p_standard_price = 175
+    	WHERE P.p_id = 1;
+
+-- This should add a new row to PriceUpdate table since the p_standard_price is not the same as new value originally
+UPDATE Product P
+	SET P.p_standard_price = 155
+    	WHERE P.p_id = 1;
+
+-- This should add a multiple rows to PriceUpdate table since the p_standard_price is not the same for both Products originally
+UPDATE Product P
+	SET P.p_standard_price = 155
+    	WHERE P.p_id = 2 OR P.p_id = 3;
