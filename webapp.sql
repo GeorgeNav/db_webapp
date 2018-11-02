@@ -16,6 +16,8 @@ DROP TABLE IF EXISTS Product;
 DROP TABLE IF EXISTS Orderr;
 DROP TABLE IF EXISTS OrderLine;
 DROP TABLE IF EXISTS PriceUpdate;
+DROP PROCEDURE IF EXISTS ProductLineSale; 
+DROP TRIGGER IF EXISTS StandardPriceUpdate;
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- Customers
@@ -153,7 +155,7 @@ CREATE TABLE OrderLine (
 
 -- PriceUpdate
 CREATE TABLE PriceUpdate (
-    pu_id CHAR(30) NOT NULL,
+    pu_id INT(11) AUTO_INCREMENT,
     pu_date DATETIME,
     pu_old_price FLOAT,
     pu_new_price FLOAT,
@@ -180,7 +182,6 @@ INSERT INTO OrderLine VALUES ( 1010, 8, 10, NULL );
 
 -- Question 1: Simple Stored Procedure
 DELIMITER $$ -- Change delimiter from ; to $$
-DROP PROCEDURE IF EXISTS ProductLineSale$$
 CREATE PROCEDURE ProductLineSale()
     BEGIN
     ALTER TABLE Product
@@ -193,3 +194,14 @@ CREATE PROCEDURE ProductLineSale()
             WHERE P.p_standard_price >= 400;
     END$$
 DELIMITER; -- Change delimiter back to ;
+
+DELIMITER $$
+CREATE OR REPLACE TRIGGER StandardPriceUpdate
+	AFTER UPDATE ON Product
+    FOR EACH ROW
+        BEGIN
+            INSERT INTO PriceUpdate
+                (pu_date,pu_old_price,pu_new_price) VALUES
+                    (NOW(), OLD.p_standard_price, NEW.p_standard_price)
+        END$$
+DELIMITER;
